@@ -744,6 +744,10 @@ function rebuild() {
 
 function build() { rebuild(); }
 
+// These are assigned inside fonts.ready but declared here so rebuild() can call them
+let fitToScreen = () => {};
+let wireHoverOverlays = () => {};
+
 document.fonts.ready.then(() => {
   build();
 
@@ -759,7 +763,7 @@ document.fonts.ready.then(() => {
     document.getElementById('zoom-label').textContent = Math.round(scale*100)+'%';
   }
 
-  function fitToScreen() {
+  fitToScreen = function() {
     const svgW = parseFloat(svg.getAttribute('width'))  || 2000;
     const svgH = parseFloat(svg.getAttribute('height')) || 6000;
     const wrapW = wrap.clientWidth;
@@ -1024,7 +1028,7 @@ document.fonts.ready.then(() => {
   });
 
   // Called after every rebuild() to re-attach hover events to new DOM nodes
-  function wireHoverOverlays() {
+  wireHoverOverlays = function() {
     document.querySelectorAll('g[data-node]').forEach(g => {
       if (!g.dataset.url) return;
       g.addEventListener('mouseenter', () => {
