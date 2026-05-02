@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SPGo 🧩, Drilldown</title>
+<title>SPGo Structure, Drilldown</title>
 <meta property="og:title" content="SPGo Structure Diagram">
 <meta property="og:image" content="https://i.postimg.cc/kXPFJh6w/Bussoge-twin.png">
 <meta property="og:type" content="website">
@@ -65,7 +65,7 @@ svg { display: block; overflow: visible; }
 #collapse-btn { display:none; width:100%; background:none; border:none;
   color:rgba(255,255,255,0.45); font-size:16px; cursor:pointer; padding:2px 0 4px;
   text-align:center; font-family:'Cinzel',serif; }
-#collapsible { overflow:hidden; transition:max-height 0.3s ease; max-height:200px; }
+#collapsible { overflow:hidden; transition:max-height 0.3s ease; max-height:400px; }
 
 /* ── Mobile ── */
 @media (max-width:768px) {
@@ -80,17 +80,6 @@ svg { display: block; overflow: visible; }
   #mag-label { font-size: 15px; }
   #controls { gap: 10px; flex-wrap: wrap; }
   #wrap { height: calc(100vh - 56px); }
-}
-
-/* ── Print styles ── */
-@media print {
-  body { background: #04042A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  #header { display: none !important; }
-  #wrap { height: auto !important; overflow: visible !important; border: none !important;
-    position: static !important; }
-  #canvas { transform: none !important; position: static !important; }
-  svg { width: 100% !important; height: auto !important; }
-  #mag-modal-backdrop, #mag-hint-bar { display: none !important; }
 }
 </style>
 </head>
@@ -113,11 +102,17 @@ svg { display: block; overflow: visible; }
     <span id="zoom-label">100%</span>
     <button onclick="zoom(0.15)">＋</button>
     <button onclick="resetView()">⊡ Fit</button>
-    <button onclick="printDiagram()">🖨 Print</button>
     <div id="mag-btn" onclick="toggleMag()">
       <span id="mag-icon">🔍</span>
       <span id="mag-label">Off</span>
     </div>
+  </div>
+  <div style="text-align:center;margin-top:5px;padding-bottom:4px;">
+    <button id="export-btn" onclick="exportPNG()" style="background:rgba(255,220,0,0.12);
+      border:1px solid rgba(255,220,0,0.35);color:#FFE000;font-family:'Cinzel',serif;
+      font-size:11px;padding:3px 16px;border-radius:20px;cursor:pointer;">
+      📷 Save as Image
+    </button>
   </div>
   </div>
 </div>
@@ -138,23 +133,57 @@ svg { display: block; overflow: visible; }
 <script>
 // ── Global stubs — real implementations assigned inside fonts.ready ──────────
 window.zoom          = () => {};
-window.printDiagram = () => {
-  // Temporarily remove canvas transform so SVG prints at full resolution
-  const canvas = document.getElementById('canvas');
-  const svg = document.getElementById('diagram');
-  const origTransform = canvas.style.transform;
-  const origW = svg.style.width;
-  const origH = svg.style.height;
-  canvas.style.transform = 'none';
-  svg.style.width = svg.getAttribute('width') + 'px';
-  svg.style.height = svg.getAttribute('height') + 'px';
-  window.print();
-  // Restore after print dialog closes
-  setTimeout(() => {
-    canvas.style.transform = origTransform;
-    svg.style.width = origW;
-    svg.style.height = origH;
-  }, 1000);
+window.exportPNG = () => {
+  const svgEl = document.getElementById('diagram');
+  const svgW  = parseFloat(svgEl.getAttribute('width'));
+  const svgH  = parseFloat(svgEl.getAttribute('height'));
+  const scale = 2; // 2x = high resolution
+  const btn   = document.getElementById('export-btn');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  // Serialize SVG with embedded styles
+  const serializer = new XMLSerializer();
+  let svgStr = serializer.serializeToString(svgEl);
+
+  // Ensure xmlns is present
+  if (!svgStr.includes('xmlns="http://www.w3.org/2000/svg"')) {
+    svgStr = svgStr.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+
+  // Add background rect
+  svgStr = svgStr.replace(/(<svg[^>]*>)/, '$1<rect width="' + svgW + '" height="' + svgH + '" fill="#04042A"/>');
+
+  const blob = new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const img  = new Image();
+
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width  = svgW * scale;
+    canvas.height = svgH * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+
+    canvas.toBlob(blob2 => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob2);
+      a.download = 'SPGo-Structure.png';
+      a.click();
+      btn.textContent = '📷 Save as Image';
+      btn.disabled = false;
+    }, 'image/png');
+  };
+
+  img.onerror = () => {
+    btn.textContent = '📷 Save as Image';
+    btn.disabled = false;
+    alert('Export failed — try zooming to Fit first then retry.');
+  };
+
+  img.src = url;
 };
 window.resetView     = () => {};
 window.toggleMag     = () => {};
