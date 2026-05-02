@@ -81,6 +81,17 @@ svg { display: block; overflow: visible; }
   #controls { gap: 10px; flex-wrap: wrap; }
   #wrap { height: calc(100vh - 56px); }
 }
+
+/* ── Print styles ── */
+@media print {
+  body { background: #04042A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  #header { display: none !important; }
+  #wrap { height: auto !important; overflow: visible !important; border: none !important;
+    position: static !important; }
+  #canvas { transform: none !important; position: static !important; }
+  svg { width: 100% !important; height: auto !important; }
+  #mag-modal-backdrop, #mag-hint-bar { display: none !important; }
+}
 </style>
 </head>
 <body>
@@ -102,6 +113,7 @@ svg { display: block; overflow: visible; }
     <span id="zoom-label">100%</span>
     <button onclick="zoom(0.15)">＋</button>
     <button onclick="resetView()">⊡ Fit</button>
+    <button onclick="printDiagram()">🖨 Print</button>
     <div id="mag-btn" onclick="toggleMag()">
       <span id="mag-icon">🔍</span>
       <span id="mag-label">Off</span>
@@ -126,6 +138,24 @@ svg { display: block; overflow: visible; }
 <script>
 // ── Global stubs — real implementations assigned inside fonts.ready ──────────
 window.zoom          = () => {};
+window.printDiagram = () => {
+  // Temporarily remove canvas transform so SVG prints at full resolution
+  const canvas = document.getElementById('canvas');
+  const svg = document.getElementById('diagram');
+  const origTransform = canvas.style.transform;
+  const origW = svg.style.width;
+  const origH = svg.style.height;
+  canvas.style.transform = 'none';
+  svg.style.width = svg.getAttribute('width') + 'px';
+  svg.style.height = svg.getAttribute('height') + 'px';
+  window.print();
+  // Restore after print dialog closes
+  setTimeout(() => {
+    canvas.style.transform = origTransform;
+    svg.style.width = origW;
+    svg.style.height = origH;
+  }, 1000);
+};
 window.resetView     = () => {};
 window.toggleMag     = () => {};
 window.toggleHeader  = () => {};
@@ -484,7 +514,7 @@ function wrapText(text, maxW, fontSize) {
 
 
 
-document.fonts.ready.then(() => {
+window.addEventListener('DOMContentLoaded', () => {
   // ── Toggle expand/collapse ──────────────────────────────────────────────────
   const toggleNode = (n) => {
     if (!n.children || n.children.length === 0) return;
@@ -753,14 +783,14 @@ let svgDefs = null; // cache defs after first build
 
 function build() { rebuild(); }
 
-  build();
-
   // ── Pan & Zoom engine ────────────────────────────────────────────────────
   const wrap   = document.getElementById('wrap');
   const canvas = document.getElementById('canvas');
   const svg    = document.getElementById('diagram');
   let scale = 1, tx = 0, ty = 0;
   let dragging = false, startX, startY, startTx, startTy;
+
+  build();
 
   function applyTransform() {
     canvas.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
