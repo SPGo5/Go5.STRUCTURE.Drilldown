@@ -124,6 +124,13 @@ svg { display: block; overflow: visible; }
 </div>
 
 <script>
+// ── Global stubs — real implementations assigned inside fonts.ready ──────────
+window.zoom          = () => {};
+window.resetView     = () => {};
+window.toggleMag     = () => {};
+window.toggleHeader  = () => {};
+window.closeMagModal = () => {};
+
 // ── UNIVERSAL RULES ───────────────────────────────────────────────────────────
 const TYPE = {
   'Hub':           { bg:'#000073', name1:'#ffffff', border:'#00BFFF', shadow:'rgba(0,191,255,0.5)'   },
@@ -475,31 +482,27 @@ function wrapText(text, maxW, fontSize) {
   return lines;
 }
 
-// ── Toggle expand/collapse ────────────────────────────────────────────────────
-function toggleNode(n) {
-  if (!n.children || n.children.length === 0) return;
-  n.expanded = !n.expanded;
-  // If collapsing, also collapse all descendants
-  if (!n.expanded) {
-    function collapseAll(node) {
-      node.expanded = false;
-      (node.children||[]).forEach(cid => collapseAll(MAP[cid]));
-    }
-    (n.children||[]).forEach(cid => collapseAll(MAP[cid]));
-  }
-  rebuild();
-}
-
 
 
 document.fonts.ready.then(() => {
-  rebuild();
+  // ── Toggle expand/collapse ──────────────────────────────────────────────────
+  const toggleNode = (n) => {
+    if (!n.children || n.children.length === 0) return;
+    n.expanded = !n.expanded;
+    if (!n.expanded) {
+      const collapseAll = (node) => {
+        node.expanded = false;
+        (node.children||[]).forEach(cid => collapseAll(MAP[cid]));
+      };
+      (n.children||[]).forEach(cid => collapseAll(MAP[cid]));
+    }
+    rebuild();
+  };
 
-  // ── Rebuild function (inside fonts.ready so all vars are in scope) ──
 // ── Build SVG ─────────────────────────────────────────────────────────────────
 let svgDefs = null; // cache defs after first build
 
-function rebuild() {
+  function rebuild() {
   assignPos(MAP['B0'], PAD_Y, 0);
   const all    = flattenVisible('B0');
   const totalW = computeColX(all);
@@ -746,8 +749,11 @@ function rebuild() {
 
   // Fit to screen after rebuild with smooth animation
   fitToScreen();
-}
+  }
 
+function build() { rebuild(); }
+
+  build();
 
   // ── Pan & Zoom engine ────────────────────────────────────────────────────
   const wrap   = document.getElementById('wrap');
@@ -761,7 +767,7 @@ function rebuild() {
     document.getElementById('zoom-label').textContent = Math.round(scale*100)+'%';
   }
 
-  fitToScreen = function() {
+  function fitToScreen() {
     const svgW = parseFloat(svg.getAttribute('width'))  || 2000;
     const svgH = parseFloat(svg.getAttribute('height')) || 6000;
     const wrapW = wrap.clientWidth;
@@ -841,6 +847,7 @@ function rebuild() {
 
   // Mouse drag pan
   wrap.addEventListener('mousedown', e => {
+    if (e.target.closest('g[data-node]')) return;
     dragging = true; wrap.classList.add('grabbing');
     startX = e.clientX; startY = e.clientY; startTx = tx; startTy = ty;
   });
@@ -1026,7 +1033,7 @@ function rebuild() {
   });
 
   // Called after every rebuild() to re-attach hover events to new DOM nodes
-  wireHoverOverlays = function() {
+  function wireHoverOverlays() {
     document.querySelectorAll('g[data-node]').forEach(g => {
       if (!g.dataset.url) return;
       g.addEventListener('mouseenter', () => {
