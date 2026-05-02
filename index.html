@@ -8,6 +8,10 @@
 <meta property="og:image" content="https://i.postimg.cc/kXPFJh6w/Bussoge-twin.png">
 <meta property="og:type" content="website">
 <link rel="icon" type="image/png" href="https://i.postimg.cc/kXPFJh6w/Bussoge-twin.png">
+<link rel="apple-touch-icon" href="https://i.postimg.cc/kXPFJh6w/Bussoge-twin.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SPGo Structure">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Grey+Qo&display=swap" rel="stylesheet">
 <style>
@@ -111,10 +115,16 @@ svg { display: block; overflow: visible; }
     <button id="export-btn" onclick="exportPNG()" style="background:rgba(255,220,0,0.12);
       border:1px solid rgba(255,220,0,0.35);color:#FFE000;font-family:'Cinzel',serif;
       font-size:11px;padding:3px 16px;border-radius:20px;cursor:pointer;">
-      📷 Save as Image
+      📷 Save as SVG
     </button>
   </div>
-  </div>
+  
+<div style="text-align:center;margin-top:4px;padding-bottom:4px;">
+  <button id="export-btn" onclick="exportPNG()" style="background:rgba(255,220,0,0.12);border:1px solid rgba(255,220,0,0.35);color:#FFE000;font-family:'Cinzel',serif;font-size:11px;padding:3px 16px;border-radius:20px;cursor:pointer;">
+    Save as SVG
+  </button>
+</div>
+</div>
 </div>
 <div id="mag-modal-backdrop">
   <div id="mag-modal">
@@ -133,58 +143,6 @@ svg { display: block; overflow: visible; }
 <script>
 // ── Global stubs — real implementations assigned inside fonts.ready ──────────
 window.zoom          = () => {};
-window.exportPNG = () => {
-  const svgEl = document.getElementById('diagram');
-  const svgW  = parseFloat(svgEl.getAttribute('width'));
-  const svgH  = parseFloat(svgEl.getAttribute('height'));
-  const scale = 2; // 2x = high resolution
-  const btn   = document.getElementById('export-btn');
-  btn.textContent = '⏳ Generating...';
-  btn.disabled = true;
-
-  // Serialize SVG with embedded styles
-  const serializer = new XMLSerializer();
-  let svgStr = serializer.serializeToString(svgEl);
-
-  // Ensure xmlns is present
-  if (!svgStr.includes('xmlns="http://www.w3.org/2000/svg"')) {
-    svgStr = svgStr.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
-  }
-
-  // Add background rect
-  svgStr = svgStr.replace(/(<svg[^>]*>)/, '$1<rect width="' + svgW + '" height="' + svgH + '" fill="#04042A"/>');
-
-  const blob = new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'});
-  const url  = URL.createObjectURL(blob);
-  const img  = new Image();
-
-  img.onload = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width  = svgW * scale;
-    canvas.height = svgH * scale;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0);
-    URL.revokeObjectURL(url);
-
-    canvas.toBlob(blob2 => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob2);
-      a.download = 'SPGo-Structure.png';
-      a.click();
-      btn.textContent = '📷 Save as Image';
-      btn.disabled = false;
-    }, 'image/png');
-  };
-
-  img.onerror = () => {
-    btn.textContent = '📷 Save as Image';
-    btn.disabled = false;
-    alert('Export failed — try zooming to Fit first then retry.');
-  };
-
-  img.src = url;
-};
 window.resetView     = () => {};
 window.toggleMag     = () => {};
 window.toggleHeader  = () => {};
@@ -1121,13 +1079,63 @@ function build() { rebuild(); }
     });
   }
 
+
+  window.exportPNG = function() {
+    var svgEl = document.getElementById('diagram');
+    var svgW  = svgEl.getAttribute('width');
+    var svgH  = svgEl.getAttribute('height');
+    var btn   = document.getElementById('export-btn');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    var ser = new XMLSerializer();
+    var str = ser.serializeToString(svgEl);
+    if (str.indexOf('xmlns=') === -1) str = str.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+    str = str.replace(/(<svg[^>]*>)/, '$1<rect width="' + svgW + '" height="' + svgH + '" fill="#04042A"/>');
+    var blob = new Blob([str], {type: 'image/svg+xml;charset=utf-8'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'SPGo-Structure-Full.svg';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(a.href);
+    btn.textContent = 'Save as SVG';
+    btn.disabled = false;
+  };
   // Click outside mag panel closes it
   document.addEventListener('click', () => {
     if (magMode && magOpen) closeMag();
   });
 
   wrap.addEventListener('wheel', closeMag, {passive:true});
+
+  window.exportPNG = function() {
+    var svgEl = document.getElementById('diagram');
+    var svgW = svgEl.getAttribute('width');
+    var svgH = svgEl.getAttribute('height');
+    var btn = document.getElementById('export-btn');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+    var str = new XMLSerializer().serializeToString(svgEl);
+    if (str.indexOf('xmlns=') === -1) str = str.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+    str = str.replace(/<svg([^>]*)>/, '<svg$1><rect width="' + svgW + '" height="' + svgH + '" fill="#04042A"/>');
+    var blob = new Blob([str], {type: 'image/svg+xml;charset=utf-8'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'SPGo-Structure-Full.svg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    btn.textContent = 'Save as SVG';
+    btn.disabled = false;
+  };
+
 });
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
 </script>
 </body>
 </html>
