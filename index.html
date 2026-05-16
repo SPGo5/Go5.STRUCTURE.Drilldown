@@ -199,7 +199,7 @@ const NODES = [
     boxW:450, boxH:240, idSize:18, name1Size:24, name2Size:40,
     imgs:['https://i.postimg.cc/g0MQdmBz/Yijing-I-tenjiku.png'], children:[] },
 
-  { id:'E.S1', emoji:'👤', name1:'Your Personal Portal', name2:'Kuchinashi', n2color:'#ccff06',
+  { id:'E.S1', emoji:'👤', name1:'Personal Portal', name2:'Kuchinashi', n2color:'#ccff06',
     type:'External Link', status:'Live', gate:'col C', url:'',
     boxW:450, boxH:240, idSize:18, name1Size:24, name2Size:40,
     imgs:['https://i.postimg.cc/qqwDTzrF/Kuchinashi.png'], children:[] },
@@ -615,7 +615,7 @@ let svgDefs = null; // cache defs after first build
 
     // Stub for nodes with hidden children: solid segment then dashed segment
     if (hasHiddenChildren) {
-      const solidLen = 28, totalLen = 72;
+      const solidLen = 84, totalLen = 128;
       // Solid part
       svg.appendChild(el('line', {
         x1: px, y1: py, x2: px + solidLen, y2: py,
@@ -624,7 +624,7 @@ let svgDefs = null; // cache defs after first build
       // Dashed part following immediately after
       svg.appendChild(el('line', {
         x1: px + solidLen, y1: py, x2: px + totalLen, y2: py,
-        stroke:'rgba(255,200,60,0.55)', 'stroke-width':'2',
+        stroke:'rgba(255,200,60,0.55)', 'stroke-width':'2.5',
         'stroke-dasharray':'7,5'
       }));
     }
